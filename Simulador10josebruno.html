@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simulador de Custo com Faltas e Atrasos - CLT 2026</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <style>
+    body {
+      background-color: #f0f2f5;
+    }
+    .app-header {
+      background: #003366;
+      color: #fff;
+      padding: 14px 24px;
+    }
+    .app-header h1 {
+      font-size: 1.1rem;
+      margin: 0;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .nav-tabs .nav-link {
+      color: #444;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+    .nav-tabs .nav-link.active {
+      color: #003366;
+      border-bottom: 2px solid #003366;
+    }
+    .tab-content > .tab-pane {
+      background: #fff;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      border-radius: 0 0 .375rem .375rem;
+      padding: 20px;
+    }
+    .section-title {
+      font-weight: 700;
+      font-size: 0.875rem;
+      color: #003366;
+      border-bottom: 1px solid #dee2e6;
+      padding-bottom: 4px;
+      margin-bottom: 12px;
+      margin-top: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .form-control[readonly] {
+      background-color: #eaf5d3;
+      font-weight: 700;
+      color: #1a5c00;
+    }
+    .form-label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 2px;
+    }
+    .obs {
+      font-size: 0.75rem;
+      color: #666;
+      margin-top: 10px;
+    }
+    .footer-note {
+      font-size: 0.7rem;
+      color: #888;
+      margin-top: 20px;
+    }
+    .resumo-label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #444;
+      padding: 4px 0;
+    }
+    .resumo-value {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      padding: 4px 0;
+    }
+    .resumo-value.highlight {
+      color: #003366;
+      font-size: 0.95rem;
+    }
+    .resumo-row {
+      border-bottom: 1px dashed #eee;
+      padding: 3px 0;
+    }
+    .inss-list li {
+      font-size: 0.85rem;
+      padding: 2px 0;
+    }
+    @media print {
+      body * { visibility: hidden; }
+      #tab-resumo, #tab-resumo * { visibility: visible; }
+      #tab-resumo {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+      }
+      #btnImprimir, .btn { display: none !important; }
+      .app-header, nav, footer { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header mb-0">
+  <h1><i class="bi bi-calculator me-2"></i>Simulador de Custo com Faltas e Atrasos — CLT 2026</h1>
+</header>
+
+<div class="container-fluid py-3 px-3 px-md-4">
+
+  <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tab-colaborador-btn" data-bs-toggle="tab"
+        data-bs-target="#tab-colaborador" data-tab="tab-colaborador"
+        type="button" role="tab">
+        <i class="bi bi-person me-1"></i>Colaborador
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-faltas-btn" data-bs-toggle="tab"
+        data-bs-target="#tab-faltas" data-tab="tab-faltas"
+        type="button" role="tab">
+        <i class="bi bi-calendar-x me-1"></i>Faltas / Atrasos
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-inss-btn" data-bs-toggle="tab"
+        data-bs-target="#tab-inss" data-tab="tab-inss"
+        type="button" role="tab">
+        <i class="bi bi-percent me-1"></i>INSS / IR / Salário-Família
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-resumo-btn" data-bs-toggle="tab"
+        data-bs-target="#tab-resumo" data-tab="tab-resumo"
+        type="button" role="tab">
+        <i class="bi bi-clipboard-data me-1"></i>Resumo de Custos
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="mainTabContent">
+
+    <!-- ABA 1: COLABORADOR -->
+    <div class="tab-pane fade show active" id="tab-colaborador" role="tabpanel">
+      <div class="section-title"><i class="bi bi-person-vcard me-1"></i>Dados do Colaborador</div>
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="nome">Nome do Colaborador</label>
+          <input type="text" class="form-control form-control-sm" id="nome" value="Colaborador Exemplo"/>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="cargo">Cargo</label>
+          <input type="text" class="form-control form-control-sm" id="cargo" value="Cargo Exemplo"/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="salarioBase">Salário Base (R$)</label>
+          <input type="number" class="form-control form-control-sm" id="salarioBase" value="3000" step="0.01"/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="jornadaMensal">Jornada Mensal (horas)</label>
+          <input type="number" class="form-control form-control-sm" id="jornadaMensal" value="220"/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="qtdDependentesIR">Dependentes p/ IRRF</label>
+          <input type="number" class="form-control form-control-sm" id="qtdDependentesIR" value="0"/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="qtdDependentesSF">Filhos p/ Salário-Família (até 14 anos/deficiente)</label>
+          <input type="number" class="form-control form-control-sm" id="qtdDependentesSF" value="0"/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="pensaoAlimenticia">Pensão Alimentícia (desconto em folha, R$)</label>
+          <input type="number" class="form-control form-control-sm" id="pensaoAlimenticia" value="0" step="0.01"/>
+        </div>
+      </div>
+
+      <div class="section-title mt-4"><i class="bi bi-gift me-1"></i>Benefícios Mensais</div>
+      <div class="row g-3">
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="valeAlimentacao">Vale Alimentação (R$)</label>
+          <input type="number" class="form-control form-control-sm" id="valeAlimentacao" value="400" step="0.01"/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="valeRefeicao">Vale Refeição (R$)</label>
+          <input type="number" class="form-control form-control-sm" id="valeRefeicao" value="600" step="0.01"/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="valeTransporte">Vale Transporte (R$)</label>
+          <input type="number" class="form-control form-control-sm" id="valeTransporte" value="200" step="0.01"/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="assistMedica">Assistência Médica (R$)</label>
+          <input type="number" class="form-control form-control-sm" id="assistMedica" value="150" step="0.01"/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="assistOdonto">Assistência Odontológica (R$)</label>
+          <input type="number" class="form-control form-control-sm" id="assistOdonto" value="30" step="0.01"/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="seguroVida">Seguro de Vida (R$)</label>
+          <input type="number" class="form-control form-control-sm" id="seguroVida" value="20" step="0.01"/>
+        </div>
+      </div>
+
+      <div class="section-title mt-4"><i class="bi bi-bank me-1"></i>Configuração de FGTS</div>
+      <div class="row g-3">
+        <div class="col-12 col-md-5">
+          <label class="form-label" for="tipoFGTS">Tipo de Contrato (FGTS)</label>
+          <select class="form-select form-select-sm" id="tipoFGTS">
+            <option value="clt8" selected>CLT Padrão (FGTS 8% 2026)</option>
+            <option value="aprendiz2">Aprendiz (FGTS 2%)</option>
+            <option value="custom">Outro (informar alíquota manualmente)</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-3" id="wrapFgtsCustom" style="display:none;">
+          <label class="form-label" for="fgtsCustomPercent" id="lblFgtsCustom">Alíquota FGTS personalizada (%)</label>
+          <input type="number" class="form-control form-control-sm" id="fgtsCustomPercent" value="8" step="0.1"/>
+        </div>
+      </div>
+
+      <div class="section-title mt-4"><i class="bi bi-calculator me-1"></i>Valores Calculados Automaticamente</div>
+      <div class="row g-3">
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="totalBeneficios">Total Benefícios</label>
+          <input type="text" class="form-control form-control-sm" id="totalBeneficios" readonly/>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="valorHora">Valor Hora</label>
+          <input type="text" class="form-control form-control-sm" id="valorHora" readonly/>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="valorMinuto">Valor Minuto</label>
+          <input type="text" class="form-control form-control-sm" id="valorMinuto" readonly/>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="valorDia">Valor Dia (1/30)</label>
+          <input type="text" class="form-control form-control-sm" id="valorDia" readonly/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="custoBrutoTotal">Custo Bruto Total (Salário + Benefícios)</label>
+          <input type="text" class="form-control form-control-sm" id="custoBrutoTotal" readonly/>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <button type="button" class="btn btn-primary btn-sm" onclick="recalcular()">
+          <i class="bi bi-arrow-clockwise me-1"></i>Calcular
+        </button>
+      </div>
+    </div>
+
+    <!-- ABA 2: FALTAS / ATRASOS -->
+    <div class="tab-pane fade" id="tab-faltas" role="tabpanel">
+      <div class="section-title"><i class="bi bi-calendar-x me-1"></i>Ocorrências do Mês — Faltas e Atrasos</div>
+      <div class="row g-3">
+        <div class="col-12 col-md-3">
+          <label class="form-label" for="qtdFaltas">Faltas injustificadas (qtd.)</label>
+          <input type="number" class="form-control form-control-sm" id="qtdFaltas" value="1"/>
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="form-label" for="minAtrasoBruto">Total de minutos de atraso (bruto)</label>
+          <input type="number" class="form-control form-control-sm" id="minAtrasoBruto" value="45"/>
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="form-label" for="diasAtraso">Dias com atraso</label>
+          <input type="number" class="form-control form-control-sm" id="diasAtraso" value="3"/>
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="form-label" for="totalDSRMes">Total de DSR no mês</label>
+          <input type="number" class="form-control form-control-sm" id="totalDSRMes" value="4"/>
+        </div>
+      </div>
+
+      <div class="section-title mt-4"><i class="bi bi-currency-dollar me-1"></i>Descontos Calculados</div>
+      <div class="row g-3">
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="descFaltas">Desconto por Faltas</label>
+          <input type="text" class="form-control form-control-sm" id="descFaltas" readonly/>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="descDSR">Desconto por DSR</label>
+          <input type="text" class="form-control form-control-sm" id="descDSR" readonly/>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="descAtrasos">Desconto por Atrasos</label>
+          <input type="text" class="form-control form-control-sm" id="descAtrasos" readonly/>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="totalDescOcorrencias">TOTAL Descontos Ocorrências</label>
+          <input type="text" class="form-control form-control-sm" id="totalDescOcorrencias" readonly/>
+        </div>
+      </div>
+
+      <div class="obs mt-2">
+        <i class="bi bi-info-circle me-1"></i>
+        Tolerância de 10 min/dia (Art. 58 CLT + Súmula 366 TST). Falta injustificada gera perda de 1 dia + 1 DSR proporcional.
+      </div>
+
+      <div class="mt-4">
+        <button type="button" class="btn btn-primary btn-sm" onclick="recalcular()">
+          <i class="bi bi-arrow-clockwise me-1"></i>Calcular
+        </button>
+      </div>
+    </div>
+
+    <!-- ABA 3: INSS / IR / SALÁRIO-FAMÍLIA -->
+    <div class="tab-pane fade" id="tab-inss" role="tabpanel">
+      <div class="row g-4">
+        <div class="col-12 col-md-4">
+          <div class="section-title"><i class="bi bi-table me-1"></i>Tabela INSS 2026</div>
+          <ul class="list-group list-group-flush inss-list">
+            <li class="list-group-item px-0 py-1">Até R$ 1.621,00 → <strong>7,5%</strong></li>
+            <li class="list-group-item px-0 py-1">R$ 1.621,01 a R$ 2.902,84 → <strong>9%</strong></li>
+            <li class="list-group-item px-0 py-1">R$ 2.902,85 a R$ 4.354,27 → <strong>12%</strong></li>
+            <li class="list-group-item px-0 py-1">R$ 4.354,28 a R$ 8.475,55 → <strong>14%</strong></li>
+          </ul>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="section-title"><i class="bi bi-table me-1"></i>Tabela IRRF 2026</div>
+          <ul class="list-group list-group-flush inss-list">
+            <li class="list-group-item px-0 py-1">Até R$ 2.428,80 → <strong>Isento</strong></li>
+            <li class="list-group-item px-0 py-1">R$ 2.428,81 a R$ 2.826,65 → <strong>7,5%</strong> (ded. R$ 182,16)</li>
+            <li class="list-group-item px-0 py-1">R$ 2.826,66 a R$ 3.751,05 → <strong>15%</strong> (ded. R$ 381,44)</li>
+            <li class="list-group-item px-0 py-1">R$ 3.751,06 a R$ 4.664,68 → <strong>22,5%</strong> (ded. R$ 662,77)</li>
+            <li class="list-group-item px-0 py-1">Acima de R$ 4.664,68 → <strong>27,5%</strong> (ded. R$ 896,00)</li>
+          </ul>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="section-title"><i class="bi bi-people me-1"></i>Salário-Família 2026</div>
+          <ul class="list-group list-group-flush inss-list">
+            <li class="list-group-item px-0 py-1">Remuneração até R$ 1.980,38 → <strong>R$ 67,54</strong> por filho elegível</li>
+            <li class="list-group-item px-0 py-1">Acima de R$ 1.980,38 → <strong>Sem direito</strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section-title mt-4"><i class="bi bi-calculator me-1"></i>Cálculo INSS / IRRF / Salário-Família</div>
+      <div class="row g-3">
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="salarioAjustadoINSS">Salário Bruto Ajustado (base INSS)</label>
+          <input type="text" class="form-control form-control-sm" id="salarioAjustadoINSS" readonly/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="inssTotal">INSS Total a Descontar</label>
+          <input type="text" class="form-control form-control-sm" id="inssTotal" readonly/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="baseIRRFView">Base de Cálculo IRRF</label>
+          <input type="text" class="form-control form-control-sm" id="baseIRRFView" readonly/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="irrfTotalView">IRRF Total</label>
+          <input type="text" class="form-control form-control-sm" id="irrfTotalView" readonly/>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="salarioFamiliaView">Salário-Família</label>
+          <input type="text" class="form-control form-control-sm" id="salarioFamiliaView" readonly/>
+        </div>
+      </div>
+      <div class="obs mt-2">
+        <i class="bi bi-info-circle me-1"></i>
+        INSS progressivo sobre salário ajustado; IRRF sobre base (salário ajustado - INSS - pensão - dependentes); salário-família como crédito via INSS.
+      </div>
+    </div>
+
+    <!-- ABA 4: RESUMO -->
+    <div class="tab-pane fade" id="tab-resumo" role="tabpanel">
+      <div class="section-title"><i class="bi bi-person-badge me-1"></i>Identificação</div>
+      <div class="row g-2 mb-1">
+        <div class="col-6 col-md-3 resumo-label">Nome:</div>
+        <div class="col-6 col-md-9 resumo-value" id="resNome"></div>
+        <div class="col-6 col-md-3 resumo-label">Cargo:</div>
+        <div class="col-6 col-md-9 resumo-value" id="resCargo"></div>
+      </div>
+
+      <div class="section-title"><i class="bi bi-cash-stack me-1"></i>Composição Salarial</div>
+      <div class="row g-1">
+        <div class="col-6 resumo-label resumo-row">Salário Base (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end" id="resSalarioBase"></div>
+        <div class="col-6 resumo-label resumo-row">Desconto Faltas (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end text-danger" id="resDescFaltas"></div>
+        <div class="col-6 resumo-label resumo-row">Desconto DSR (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end text-danger" id="resDescDSR"></div>
+        <div class="col-6 resumo-label resumo-row">Desconto Atrasos (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end text-danger" id="resDescAtrasos"></div>
+        <div class="col-6 resumo-label resumo-row fw-bold">Salário Bruto Ajustado (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end highlight" id="resSalarioBrutoAjustado"></div>
+      </div>
+
+      <div class="section-title mt-3"><i class="bi bi-receipt-cutoff me-1"></i>Descontos Legais</div>
+      <div class="row g-1">
+        <div class="col-6 resumo-label resumo-row">INSS Progressivo 2026 (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end text-danger" id="resINSS"></div>
+        <div class="col-6 resumo-label resumo-row">IRRF 2026 (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end text-danger" id="resIRRF"></div>
+        <div class="col-6 resumo-label resumo-row">Dedução por Dependentes IRRF (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end" id="resDeducaoDependentes"></div>
+        <div class="col-6 resumo-label resumo-row">Pensão Alimentícia (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end text-danger" id="resPensao"></div>
+        <div class="col-6 resumo-label resumo-row">Vale Transporte — desconto 6% (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end text-danger" id="resVT"></div>
+        <div class="col-6 resumo-label resumo-row fw-bold">Salário Líquido (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end highlight" id="resSalarioLiquido"></div>
+      </div>
+
+      <div class="section-title mt-3"><i class="bi bi-gift me-1"></i>Benefícios Pagos pela Empresa</div>
+      <div class="row g-1">
+        <div class="col-6 resumo-label resumo-row">Total Benefícios (exceto Salário-Família) (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end" id="resTotalBeneficios"></div>
+        <div class="col-6 resumo-label resumo-row">Salário-Família — crédito via INSS (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end text-success" id="resSalarioFamilia"></div>
+      </div>
+
+      <div class="section-title mt-3"><i class="bi bi-building me-1"></i>Encargos Patronais</div>
+      <div class="row g-1">
+        <div class="col-6 resumo-label resumo-row">Total Encargos Patronais (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end" id="resTotalEncargos"></div>
+        <div class="col-6 resumo-label resumo-row">FGTS mensal arrecadado (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end" id="resFGTSValor"></div>
+        <div class="col-12">
+          <span class="obs">
+            <i class="bi bi-info-circle me-1"></i>
+            Composição sobre salário bruto ajustado: INSS Patronal 20%, FGTS (conforme tipo), SAT 2%, Sistema S 3%, Salário-Educação 2,5%, INCRA 0,2%, Sebrae 0,6%.
+          </span>
+        </div>
+      </div>
+
+      <div class="section-title mt-3"><i class="bi bi-piggy-bank me-1"></i>Provisões Mensais</div>
+      <div class="row g-1">
+        <div class="col-6 resumo-label resumo-row">Total Provisões (13º, férias, FGTS s/ provisões) (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end" id="resTotalProvisoes"></div>
+      </div>
+
+      <div class="section-title mt-3"><i class="bi bi-bar-chart-line me-1"></i>Custo Total Mensal / Anual</div>
+      <div class="row g-1">
+        <div class="col-6 resumo-label resumo-row fw-bold">Custo Total Empresa — Mês (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end highlight" id="resCustoMensal"></div>
+        <div class="col-6 resumo-label resumo-row fw-bold">Custo Total Empresa — Ano (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end highlight" id="resCustoAnual"></div>
+        <div class="col-6 resumo-label resumo-row">Diferença Custo - Líquido (R$)</div>
+        <div class="col-6 resumo-value resumo-row text-end" id="resDiferenca"></div>
+        <div class="col-6 resumo-label resumo-row">% Custo Total sobre Salário Base</div>
+        <div class="col-6 resumo-value resumo-row text-end" id="resPercentual"></div>
+      </div>
+
+      <div class="footer-note mt-4">
+        <i class="bi bi-patch-check me-1"></i>
+        Baseado em CLT 2026, INSS progressivo, tabela IRRF 2026 mensal, pensão alimentícia dedutível, dedução por dependentes, salário-família e FGTS conforme tipo de contrato (CLT 8%, aprendiz 2% ou valor personalizado).
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="px-4 pb-4 text-end">
+  <button id="btnImprimir" type="button" class="btn btn-success btn-sm" onclick="window.print()" style="display:none;">
+    <i class="bi bi-printer me-1"></i>Imprimir Resumo
+  </button>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const btnImprimir = document.getElementById("btnImprimir");
+
+  document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tabEl => {
+    tabEl.addEventListener("shown.bs.tab", e => {
+      const target = e.target.getAttribute("data-tab");
+      btnImprimir.style.display = (target === "tab-resumo") ? "inline-block" : "none";
+    });
+  });
+
+  function parseNumber(id) {
+    const el = document.getElementById(id);
+    if (!el) return 0;
+    const v = el.value.replace(",", ".");
+    const n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function formatMoney(v) {
+    return "R$ " + v.toFixed(2);
+  }
+
+  function calcularINSSProgressivo(baseINSS) {
+    const faixa1Limite = 1621.00;
+    const faixa2Limite = 2902.84;
+    const faixa3Limite = 4354.27;
+    const faixa4Limite = 8475.55;
+    let total = 0.0;
+    const faixa1Base = Math.min(baseINSS, faixa1Limite);
+    if (faixa1Base > 0) total += faixa1Base * 0.075;
+    if (baseINSS > faixa1Limite) {
+      const faixa2Base = Math.min(baseINSS, faixa2Limite) - faixa1Limite;
+      if (faixa2Base > 0) total += faixa2Base * 0.09;
+    }
+    if (baseINSS > faixa2Limite) {
+      const faixa3Base = Math.min(baseINSS, faixa3Limite) - faixa2Limite;
+      if (faixa3Base > 0) total += faixa3Base * 0.12;
+    }
+    if (baseINSS > faixa3Limite) {
+      const faixa4Base = Math.min(baseINSS, faixa4Limite) - faixa3Limite;
+      if (faixa4Base > 0) total += faixa4Base * 0.14;
+    }
+    return total;
+  }
+
+  function calcularIRRF2026(base) {
+    let aliquota = 0, deducao = 0;
+    if (base <= 2428.80)      { aliquota = 0;     deducao = 0; }
+    else if (base <= 2826.65) { aliquota = 0.075; deducao = 182.16; }
+    else if (base <= 3751.05) { aliquota = 0.15;  deducao = 381.44; }
+    else if (base <= 4664.68) { aliquota = 0.225; deducao = 662.77; }
+    else                      { aliquota = 0.275; deducao = 896.00; }
+    const ir = base * aliquota - deducao;
+    return ir > 0 ? ir : 0;
+  }
+
+  document.getElementById("tipoFGTS").addEventListener("change", () => {
+    const tipo = document.getElementById("tipoFGTS").value;
+    document.getElementById("wrapFgtsCustom").style.display = (tipo === "custom") ? "block" : "none";
+  });
+
+  function recalcular() {
+    const nome            = document.getElementById("nome").value;
+    const cargo           = document.getElementById("cargo").value;
+    const salarioBase     = parseNumber("salarioBase");
+    const jornadaMensal   = parseNumber("jornadaMensal");
+    const valeAlimentacao = parseNumber("valeAlimentacao");
+    const valeRefeicao    = parseNumber("valeRefeicao");
+    const valeTransporte  = parseNumber("valeTransporte");
+    const assistMedica    = parseNumber("assistMedica");
+    const assistOdonto    = parseNumber("assistOdonto");
+    const seguroVida      = parseNumber("seguroVida");
+    const pensaoAlimenticia = parseNumber("pensaoAlimenticia");
+    const qtdDependentesIR  = parseInt(document.getElementById("qtdDependentesIR").value || "0", 10);
+    const qtdDependentesSF  = parseInt(document.getElementById("qtdDependentesSF").value  || "0", 10);
+
+    const tipoFGTS = document.getElementById("tipoFGTS").value;
+    let fgtsPercent = 0.08;
+    if (tipoFGTS === "aprendiz2") { fgtsPercent = 0.02; }
+    else if (tipoFGTS === "custom") {
+      const custom = parseNumber("fgtsCustomPercent");
+      fgtsPercent = custom > 0 ? custom / 100.0 : 0.08;
+    }
+
+    const totalBeneficios = valeAlimentacao + valeRefeicao + valeTransporte + assistMedica + assistOdonto + seguroVida;
+    const valorHora       = jornadaMensal > 0 ? (salarioBase / jornadaMensal) : 0;
+    const valorMinuto     = valorHora / 60.0;
+    const valorDia        = salarioBase / 30.0;
+    const custoBrutoTotal = salarioBase + totalBeneficios;
+
+    document.getElementById("totalBeneficios").value = formatMoney(totalBeneficios);
+    document.getElementById("valorHora").value       = formatMoney(valorHora);
+    document.getElementById("valorMinuto").value     = "R$ " + valorMinuto.toFixed(4);
+    document.getElementById("valorDia").value        = formatMoney(valorDia);
+    document.getElementById("custoBrutoTotal").value = formatMoney(custoBrutoTotal);
+
+    const qtdFaltas      = parseInt(document.getElementById("qtdFaltas").value      || "0", 10);
+    const minAtrasoBruto = parseInt(document.getElementById("minAtrasoBruto").value || "0", 10);
+    const diasAtraso     = parseInt(document.getElementById("diasAtraso").value     || "0", 10);
+    const totalDSRMes    = parseInt(document.getElementById("totalDSRMes").value    || "0", 10);
+
+    const descFaltas         = qtdFaltas * valorDia;
+    const dsrPerdidos        = Math.min(qtdFaltas, totalDSRMes);
+    const descDSR            = dsrPerdidos * valorDia;
+    const toleranciaTotal    = 10 * diasAtraso;
+    const minutosDescontar   = Math.max(0, minAtrasoBruto - toleranciaTotal);
+    const descAtrasos        = minutosDescontar * valorMinuto;
+    const totalDescOcorrencias = descFaltas + descDSR + descAtrasos;
+
+    document.getElementById("descFaltas").value           = formatMoney(descFaltas);
+    document.getElementById("descDSR").value              = formatMoney(descDSR);
+    document.getElementById("descAtrasos").value          = formatMoney(descAtrasos);
+    document.getElementById("totalDescOcorrencias").value = formatMoney(totalDescOcorrencias);
+
+    const salarioBrutoAjustado = salarioBase - totalDescOcorrencias;
+    document.getElementById("salarioAjustadoINSS").value = formatMoney(salarioBrutoAjustado);
+
+    const inss = calcularINSSProgressivo(salarioBrutoAjustado);
+    document.getElementById("inssTotal").value = formatMoney(inss);
+
+    let salarioFamilia = 0;
+    if (salarioBrutoAjustado > 0 && salarioBrutoAjustado <= 1980.38 && qtdDependentesSF > 0) {
+      salarioFamilia = 67.54 * qtdDependentesSF;
+    }
+    document.getElementById("salarioFamiliaView").value = formatMoney(salarioFamilia);
+
+    const deducaoDependentes = 189.59 * qtdDependentesIR;
+    const baseIRRF           = salarioBrutoAjustado - inss - pensaoAlimenticia - deducaoDependentes;
+    const irrf               = baseIRRF > 0 ? calcularIRRF2026(baseIRRF) : 0;
+
+    document.getElementById("baseIRRFView").value  = formatMoney(baseIRRF > 0 ? baseIRRF : 0);
+    document.getElementById("irrfTotalView").value = formatMoney(irrf);
+
+    const descontoVT    = salarioBrutoAjustado * 0.06;
+    const salarioLiquido = salarioBrutoAjustado - inss - irrf - pensaoAlimenticia - descontoVT;
+
+    const inssPatronal    = salarioBrutoAjustado * 0.20;
+    const fgts            = salarioBrutoAjustado * fgtsPercent;
+    const sat             = salarioBrutoAjustado * 0.02;
+    const sistemaS        = salarioBrutoAjustado * 0.03;
+    const salarioEducacao = salarioBrutoAjustado * 0.025;
+    const incra           = salarioBrutoAjustado * 0.002;
+    const sebrae          = salarioBrutoAjustado * 0.006;
+    const totalEncargos   = inssPatronal + fgts + sat + sistemaS + salarioEducacao + incra + sebrae;
+
+    const decimoTerceiro      = salarioBrutoAjustado / 12.0;
+    const feriasMaisTerco     = (salarioBrutoAjustado * 1.3333) / 12.0;
+    const fgtsSobreProvisoes  = (decimoTerceiro + feriasMaisTerco) * 0.08;
+    const totalProvisoes      = decimoTerceiro + feriasMaisTerco + fgtsSobreProvisoes;
+
+    const custoTotalMensal = salarioBrutoAjustado + totalEncargos + totalProvisoes + totalBeneficios - salarioFamilia;
+    const custoTotalAnual  = custoTotalMensal * 12.0;
+    const diferenca        = custoTotalMensal - salarioLiquido;
+    const percentual       = salarioBase > 0 ? ((custoTotalMensal / salarioBase) - 1.0) * 100.0 : 0;
+
+    document.getElementById("resNome").textContent                = nome;
+    document.getElementById("resCargo").textContent               = cargo;
+    document.getElementById("resSalarioBase").textContent         = formatMoney(salarioBase);
+    document.getElementById("resDescFaltas").textContent          = formatMoney(descFaltas);
+    document.getElementById("resDescDSR").textContent             = formatMoney(descDSR);
+    document.getElementById("resDescAtrasos").textContent         = formatMoney(descAtrasos);
+    document.getElementById("resSalarioBrutoAjustado").textContent= formatMoney(salarioBrutoAjustado);
+    document.getElementById("resINSS").textContent                = formatMoney(inss);
+    document.getElementById("resIRRF").textContent                = formatMoney(irrf);
+    document.getElementById("resDeducaoDependentes").textContent  = formatMoney(deducaoDependentes);
+    document.getElementById("resPensao").textContent              = formatMoney(pensaoAlimenticia);
+    document.getElementById("resVT").textContent                  = formatMoney(descontoVT);
+    document.getElementById("resSalarioLiquido").textContent      = formatMoney(salarioLiquido);
+    document.getElementById("resTotalBeneficios").textContent     = formatMoney(totalBeneficios);
+    document.getElementById("resSalarioFamilia").textContent      = formatMoney(salarioFamilia);
+    document.getElementById("resTotalEncargos").textContent       = formatMoney(totalEncargos);
+    document.getElementById("resFGTSValor").textContent           = formatMoney(fgts);
+    document.getElementById("resTotalProvisoes").textContent      = formatMoney(totalProvisoes);
+    document.getElementById("resCustoMensal").textContent         = formatMoney(custoTotalMensal);
+    document.getElementById("resCustoAnual").textContent          = formatMoney(custoTotalAnual);
+    document.getElementById("resDiferenca").textContent           = formatMoney(diferenca);
+    document.getElementById("resPercentual").textContent          = percentual.toFixed(2) + "%";
+  }
+
+  window.addEventListener("load", () => {
+    recalcular();
+    btnImprimir.style.display = "none";
+  });
+</script>
+</body>
+</html>
